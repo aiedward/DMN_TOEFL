@@ -48,5 +48,5 @@ luac.out
 data/
 TOEFL_DATA/
 trained_models/
-
+run.sh
 
