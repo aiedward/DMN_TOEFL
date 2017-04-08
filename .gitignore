@@ -47,5 +47,6 @@ luac.out
 #lib/
 data/
 TOEFL_DATA/
+trained_models/
 
 

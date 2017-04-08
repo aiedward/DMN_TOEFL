@@ -179,13 +179,10 @@ function HierEpiModel.read_toefl_dataset(dir,vocab,num_choices,prune_rate, cuda)
   
   local dpa_dir
   local sents_dir
-  if prune_rate == 1.0 then
-    dpa_dir = string.format(dir .. 'sents_dparents')
-    sents_dir = string.format(dir .. 'sents.toks')
-  else
-    dpa_dir = string.format(dir .. 'sents_%.1f_dparents',prune_rate)
-    sents_dir = string.format(dir .. 'sents_%.1f',prune_rate)
-  end
+  
+  dpa_dir = string.format(dir .. 'sents_%.1f_dparents',prune_rate)
+  sents_dir = string.format(dir .. 'sents_%.1f.toks',prune_rate)
+  
   sent_tree_ls = HierEpiModel.read_trees(dpa_dir)
   query_tree_ls = HierEpiModel.read_trees(dir .. 'queries_sep_dparents')
   choice_tree_ls = HierEpiModel.read_trees(dir .. 'choices_dparents')
