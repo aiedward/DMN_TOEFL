@@ -91,16 +91,16 @@ def download_toefl(dirpath):
     if os.path.exists(dirpath):
         print('Found TOEFL dataset - skip')
     else:
-        url='https://github.com/sunprinceS/Hierarchical-Attention-Model/releases/download/0.0.1/to_project.zip'
+        url = 'https://github.com/jackie840129/DMN_TOEFL/releases/download/0.0.1/TOEFL_DATA.zip'
         unzip(download(url,os.path.dirname(dirpath)))
 
 
-def download_data(dirpath):
-    if os.path.exists(dirpath):
-        print('Found data directory - skip')
-    else:
-        url='https://github.com/sunprinceS/Hierarchical-Attention-Model/releases/download/0.0.1/data.zip'
-        unzip(download(url,os.path.dirname(dirpath)))
+# def download_data(dirpath):
+    # if os.path.exists(dirpath):
+        # print('Found data directory - skip')
+    # else:
+        # url='https://github.com/sunprinceS/Hierarchical-Attention-Model/releases/download/0.0.1/data.zip'
+        # unzip(download(url,os.path.dirname(dirpath)))
 
 
 if __name__ == '__main__':
@@ -108,15 +108,15 @@ if __name__ == '__main__':
 
     # data
     data_dir = os.path.join(base_dir, 'data')
-    toefl_dir = os.path.join(base_dir,'to_project')
+    toefl_dir = os.path.join(base_dir,'TOEFL_DATA')
     wordvec_dir = os.path.join(data_dir, 'glove')
 
     # libraries
     lib_dir = os.path.join(base_dir, 'lib')
 
     # download dependencies
-    download_data(data_dir)
+    # download_data(data_dir)
     download_tagger(lib_dir)
     download_parser(lib_dir)
-    # download_toefl(toefl_dir)
+    download_toefl(toefl_dir)
     download_wordvecs(wordvec_dir)

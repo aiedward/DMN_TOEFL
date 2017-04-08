@@ -1,11 +1,11 @@
-Dynamic Memory Network for Question Answering
+Hierachical Episode Model for Question Answering
 ===============================================
 
 An Modification of the Hierachical Attention Model described in the paper 
 [Hierarchical Attention Model for Improved Comprehension of Spoken Content](https://128.84.21.199/abs/1608.07775)
 by Wei Fang, Juei-Yang Hsu, Hung-Yi Lee, and Lin-Shan Lee.
 
-We use Episode memory module described in the paper [Dynamic Memory Networks for Visual and Textual Question Answering](https://arxiv.org/abs/1603.01417) to substitute the MemN2N in the HAM.
+We use **Episode memory module** of **Dynamic Memory Network plus** described in the paper [Dynamic Memory Networks for Visual and Textual Question Answering](https://arxiv.org/abs/1603.01417) to substitute the MemN2N in the HAM.
 
 ## Requirements
 
@@ -55,19 +55,23 @@ To train models for the TOEFL Listening Comprehension Test,
 run:
 
 ```
-th toefl/main.lua --model <|dmn|ham|lstm|bilstm|treelstm|memn2n> --task <manual|ASR> --level <phrase|sentence> --dim <sentence_representation_dim> --internal <memn2n_dim> --hops <memn2n_hops> --layers <num_layers> --epochs <num_epochs> --prune <pruning_rate>
+th toefl/main.lua --model <|hem|ham|lstm|bilstm|treelstm|memn2n> --task <manual|ASR> --level <phrase|sentence> --dim <sentence_representation_dim> --internal <dmn_dim> --hops <dmn_hops> --layers <num_layers> --epochs <num_epochs> --prune <pruning_rate>
 ```
 
 where:
 
-  - `model`: the model to train (default: dmn, i.e. Dynamic Memory Network Module)
+  - `model`: the model to train (default: hem, i.e. Hierachical Episode Model)
   - `task`: the transcription to be trained on  (default: manual)
-  - `level`: the attention level of the HAM (default: phrase, ignored for other models)
+  - `level`: the attention level of the HAM (default: sentence, ignored for other models)
   - `dim`: the dimension for sentence/phrase representations (default: 75)
-  - `internal`: the dimension for memory module in HAM or for MemN2N (default: 75, ignored for other models)
-  - `hops`: the number of hops for HAM or MemN2N (default: 1, ignored for other models)
+  - `internal`: the dimension for memory module in DMN or for MemN2N (default: 75, ignored for other models)
+  - `hops`: the number of hops for DMN or MemN2N (default: 1, ignored for other models)
   - `layers`: the number of layers for LSTM or BiLSTM (default: 1, ignored for other models)
   - `epochs`: the number of training epochs (default: 10)
   - `prune`: the preprocessing prune rate (default: 1, i.e. no pruning)
 
 Trained model parameters are saved to the `trained_models` directory.
+
+### The Limitation
+
+This Hierachical Episode Model now has no ASR option, and the prune rate only for 0.1 & 1.0
