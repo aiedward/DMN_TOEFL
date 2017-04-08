@@ -6,52 +6,23 @@ Training script for QA on the TOEFL listening comprehension test dataset
 
 require('..')
 torch.setdefaulttensortype('torch.FloatTensor')
---local out = assert(io.open("./attention1.csv", "w"))
---local out = assert(io.open("./attention2.csv", "w"))
---out:close()
---local out = assert(io.open("./vector1.csv", "w"))
---local out = assert(io.open("./vector2.csv", "w"))
---out:close()
-function accuracy(pred, gold,test,hops)
-  --local out = (io.open(string.format("./vector%d.csv",hops), "a"))
-  --print(pred[3])
-  if test==true then 
-    local out  = io.open(string.format("./vector%d.csv",hops),"a")
-    out:write('ANSWER,')
-    out:close()
-  end
+function accuracy(pred, gold)
   local correct = 0
   for i=1,#gold do
     for j=1,#gold[i] do
-      if test==true then 
-        local out  = io.open(string.format("./vector%d.csv",hops),"a")
-        out:write(string.format('%d-%d,%d,',i,j,pred[i][j]))
-        out:close()
-      end
       if gold[i][j] == pred[i][j] then
         correct = correct + 1
-        --
-        if test==true then 
-          local out  = io.open(string.format("./vector%d.csv",hops),"a")
-          out:write(string.format('%s,','yes'))
-          out:close()
-        end
-        --
         break
       end
     end
   end
-        if test==true then 
-          local out  = io.open(string.format("./vector%d.csv",hops),"a")
-          out:write('\n')
-        end
   return correct / #gold
 end
 
 -- read command line arguments
 local args = lapp [[
 Training script for QA on the TOEFL listening comprehension
--m,--model  (default dmn)           Model architecture: [ham, lstm, bilstm, treelstm, memn2n, dmn]
+-m,--model  (default hem)           Model architecture: [ham, lstm, bilstm, treelstm, memn2n, hem]
 -t,--task   (default manual)        [manual, ASR]
 -d,--dim    (default 75)            Sentence representation model memory dimension
 -i,--internal (default 75)          MemN2N internal dimension
@@ -80,22 +51,22 @@ printf('%-25s = %.2f\n', 'pruning rate',args.prune)
 local model_name, model_class, model_structure, mem_size
 if args.model == 'ham' then
   model_name = 'Hierarchical Attention Model'
-  model_class = HierAttnModel.HierAttnModelToefl
+  model_class = HierEpiModel.HierAttnModelToefl
 elseif args.model == 'lstm' then
   model_name = 'Unidirectional LSTM'
-  model_class = HierAttnModel.LSTMToefl
+  model_class = HierEpiModel.LSTMToefl
 elseif args.model == 'bilstm' then
   model_name = 'Bidirectional LSTM'
-  model_class = HierAttnModel.LSTMToefl
+  model_class = HierEpiModel.LSTMToefl
 elseif args.model == 'treelstm' then
   model_name = 'Tree-structured LSTM'
-  model_class = HierAttnModel.TreeLSTMToefl
+  model_class = HierEpiModel.TreeLSTMToefl
 elseif args.model == 'memn2n' then
   model_name = 'End-to-end Memory Network'
-  model_class = HierAttnModel.MemN2NToefl
-elseif args.model == 'dmn' then
-  model_name = 'Dynamic Memory Network'
-  model_class = HierAttnModel.DMNModelToefl
+  model_class = HierEpiModel.MemN2NToefl
+elseif args.model == 'hem' then
+  model_name = 'Hierarchical Episode Network'
+  model_class = HierEpiModel.HEModelToefl
 end
 
 model_structure = args.model
@@ -105,13 +76,13 @@ header(model_name .. ' for TOEFL Question Answering')
 local data_dir = string.format('data/toefl/%s_trans/',args.task)
 
 -- load vocab
-local vocab = HierAttnModel.Vocab('data/toefl/manual_trans/vocab-cased.txt') -- whole vocab
+local vocab = HierEpiModel.Vocab('data/toefl/manual_trans/vocab-cased.txt') -- whole vocab
 
 -- load embeddings
 print('loading word embeddings')
 local emb_dir = 'data/glove/'
 local emb_prefix = emb_dir .. 'glove.840B'
-local emb_vocab, emb_vecs = HierAttnModel.read_embedding(emb_prefix .. '.vocab', emb_prefix .. '.300d.th')
+local emb_vocab, emb_vecs = HierEpiModel.read_embedding(emb_prefix .. '.vocab', emb_prefix .. '.300d.th')
 local emb_dim = emb_vecs:size(2)
 
 -- use only vectors in vocabulary (not necessary, but gives faster training)
@@ -139,10 +110,10 @@ local train_dir = 'data/toefl/manual_trans/train/'
 local dev_dir = 'data/toefl/manual_trans/dev/'
 local test_manual_dir = 'data/toefl/manual_trans/test/'
 local test_dir = data_dir .. 'test/'
-local train_dataset = HierAttnModel.read_toefl_dataset(train_dir, vocab, num_choices, args.prune, args.cuda)
-local test_dataset = HierAttnModel.read_toefl_dataset(test_dir, vocab, num_choices, args.prune, args.cuda)
-local dev_dataset = HierAttnModel.read_toefl_dataset(dev_dir, vocab, num_choices, args.prune, args.cuda)
-local test_manual_dataset = HierAttnModel.read_toefl_dataset(test_manual_dir, vocab, num_choices, args.prune, args.cuda)
+local train_dataset = HierEpiModel.read_toefl_dataset(train_dir, vocab, num_choices, args.prune, args.cuda)
+local test_dataset = HierEpiModel.read_toefl_dataset(test_dir, vocab, num_choices, args.prune, args.cuda)
+local dev_dataset = HierEpiModel.read_toefl_dataset(dev_dir, vocab, num_choices, args.prune, args.cuda)
+local test_manual_dataset = HierEpiModel.read_toefl_dataset(test_manual_dir, vocab, num_choices, args.prune, args.cuda)
 
 printf('num train = %d\n', train_dataset.size)
 printf('num dev   = %d\n', dev_dataset.size)
@@ -188,19 +159,19 @@ header('Training model')
 for i = 1, num_epochs do
   local start = sys.clock()
   printf('-- epoch %d\n', i)
-  --loss = model:train(train_dataset)
   model:train(train_dataset)
-  --printf('--loss = %.5f\n',loss) 
   printf('-- finished epoch in %.2fs\n', sys.clock() - start)
 
-  -- uncomment to print training accuracy
-  --local train_predictions = model:predict_dataset(train_dataset)
-  --local train_score = accuracy(train_predictions, train_dataset.answers)
-  --printf('-- train score: %.4f\n', train_score)
+  --uncomment to print training accuracy
+  if i == num_epochs or i==1  then
+    local train_predictions = model:predict_dataset(train_dataset)
+    local train_score = accuracy(train_predictions, train_dataset.answers)
+    printf('-- train score: %.4f\n', train_score)
+  end
 
   --
   local dev_predictions = model:predict_dataset(dev_dataset,false)
-  local dev_score = accuracy(dev_predictions, dev_dataset.answers,false,args.hops)
+  local dev_score = accuracy(dev_predictions, dev_dataset.answers)
   printf('-- dev score: %.4f\n', dev_score)
 
   if dev_score > best_dev_score then
@@ -235,31 +206,21 @@ printf('finished training in %.2fs\n', sys.clock() - train_start)
 header('Evaluating on test set')
 printf('-- using model with dev score = %.4f\n', best_dev_score)
 local test_predictions = best_dev_model:predict_dataset(test_dataset,true)
----
---local out = (io.open(string.format("./vector%d.csv",args.hops), "a"))
---splitter = ","
---out:write('ANSWER,')
---print(test_predictions[1])
---for i=1,#test_predictions do
-      --out:write(string.format('%.4f',test_predictions[i][1]))
-      --if i == #test_predictions then
-          --out:write("\n")
-      --else
-          --out:write(splitter)
-      --end
---end
----
-local prediction_score = accuracy(test_predictions, test_dataset.answers,true,args.hops)
+local prediction_score = accuracy(test_predictions, test_dataset.answers)
 printf('-- test score: %.4f\n', prediction_score)
 
 -- create models directories if necessary
 local models_dir
 if args.model == 'ham' and args.level == 'phrase' then
-  models_dir = HierAttnModel.models_dir .. '/phrase_level'
+  models_dir = HierEpiModel.models_dir .. '/phrase_level'
 elseif args.model == 'ham' then
-  models_dir = HierAttnModel.models_dir .. '/sentence_level'
+  models_dir = HierEpiModel.models_dir .. '/sentence_level'
+elseif args.model == 'hem' and args.level == 'phrase' then
+  models_dir = HierEpiModel.models_dir .. '/phrase_level'
+elseif args.model == 'hem' then
+  models_dir = HierEpiModel.models_dir .. '/sentence_level'
 else
-  models_dir = HierAttnModel.models_dir .. '/' .. args.model .. '_norelu/'
+  models_dir = HierEpiModel.models_dir .. '/Alternative'  
 end
 if lfs.attributes(models_dir) == nil then
   lfs.mkdir(models_dir)

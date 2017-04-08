@@ -8,7 +8,7 @@
 
 --]]
 
-local CRowAddTable, parent = torch.class('HierAttnModel.CRowAddTable', 'nn.Module')
+local CRowAddTable, parent = torch.class('HierEpiModel.CRowAddTable', 'nn.Module')
 
 function CRowAddTable:__init()
    parent.__init(self)

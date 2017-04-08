@@ -4,7 +4,7 @@
 
 --]]
 
-local ChildSumTreeLSTM, parent = torch.class('HierAttnModel.ChildSumTreeLSTM', 'HierAttnModel.TreeLSTM')
+local ChildSumTreeLSTM, parent = torch.class('HierEpiModel.ChildSumTreeLSTM', 'HierEpiModel.TreeLSTM')
 
 function ChildSumTreeLSTM:__init(config)
     parent.__init(self, config)
@@ -32,7 +32,7 @@ function ChildSumTreeLSTM:new_composer()
             nn.Dropout(self.dropout)(nn.Linear(self.mem_dim, self.mem_dim)(child_h_sum))
     })
     local f = nn.Sigmoid()(
-        HierAttnModel.CRowAddTable(){
+        HierEpiModel.CRowAddTable(){
             nn.Dropout(self.dropout)(nn.TemporalConvolution(self.mem_dim, self.mem_dim, 1)(child_h)),
             nn.Dropout(self.dropout)(nn.Linear(self.in_dim, self.mem_dim)(input)),
     })

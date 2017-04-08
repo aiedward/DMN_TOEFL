@@ -7,7 +7,7 @@ token.
 
 --]]
 
-local Vocab = torch.class('HierAttnModel.Vocab')
+local Vocab = torch.class('HierEpiModel.Vocab')
 
 function Vocab:__init(path)
   self.size = 0

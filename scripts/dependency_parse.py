@@ -17,7 +17,7 @@ classpath = ':'.join([
 dir_ls = list()
 for sub_dir in ['train','dev','test']:
     dir_ls.append(os.path.join(toefl_manual_dir,sub_dir))
-dir_ls.append(os.path.join(toefl_ASR_dir,'test'))
+# dir_ls.append(os.path.join(toefl_ASR_dir,'test'))
 
 print('\nDependency parsing ' + sys.argv[1])
 # dirpath = os.path.dirname(sys.argv[1])

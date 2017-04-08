@@ -118,5 +118,5 @@ if __name__ == '__main__':
     download_data(data_dir)
     download_tagger(lib_dir)
     download_parser(lib_dir)
-    download_toefl(toefl_dir)
+    # download_toefl(toefl_dir)
     download_wordvecs(wordvec_dir)

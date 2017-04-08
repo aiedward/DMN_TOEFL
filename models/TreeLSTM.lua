@@ -4,7 +4,7 @@
 
 --]]
 
-local TreeLSTM, parent = torch.class('HierAttnModel.TreeLSTM', 'nn.Module')
+local TreeLSTM, parent = torch.class('HierEpiModel.TreeLSTM', 'nn.Module')
 
 function TreeLSTM:__init(config)
     parent.__init(self)

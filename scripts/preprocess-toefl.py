@@ -9,6 +9,7 @@ import os
 import glob
 import sys
 import argparse
+import shutil
 from utils import build_vocab,get_sentence,make_dirs,dependency_parse
 
 def preprocess_story(data_dir):
@@ -79,19 +80,27 @@ if __name__ == '__main__':
     sent_paths = list()
     query_paths = list()
     choice_paths = list()
-    data_types = ['manual_trans','ASR_trans']
+    data_types = ['manual_trans']
+    # data_types = ['manual_trans','ASR_trans']
 
     for data_type in data_types:
-        orig_data_dir = os.path.join(base_dir,'to_project',data_type)
+        orig_data_dir = os.path.join(base_dir,'TOEFL_DATA',data_type)
         toefltask_dir = os.path.join(data_dir, 'toefl',data_type)
 
         train_dir=dict()
         dev_dir=dict()
         test_dir=dict()
-
+        
+        if os.path.exists(toefltask_dir):
+            shutil.rmtree(toefltask_dir)
+        os.makedirs(toefltask_dir)
         train_dir['des'] = os.path.join(toefltask_dir, 'train')
         dev_dir['des'] = os.path.join(toefltask_dir,'dev')
         test_dir['des'] = os.path.join(toefltask_dir ,'test')
+        if not os.path.exists(train_dir['des']):
+            os.makedirs(train_dir['des'])
+            os.makedirs(dev_dir['des'])
+            os.makedirs(test_dir['des'])
 
         train_dir['src'] = os.path.join(orig_data_dir, 'train')
         dev_dir['src'] = os.path.join(orig_data_dir,'dev')
@@ -104,22 +113,20 @@ if __name__ == '__main__':
 
         for d in traverse_dir:
             preprocess_story(d)
-
         sent_paths.extend(glob.glob(os.path.join(toefltask_dir, '*/sents')))
         query_paths.extend(glob.glob(os.path.join(toefltask_dir ,'*/queries')))
         choice_paths.extend(glob.glob(os.path.join(toefltask_dir,'*/choices')))
-
     # produce dependency parses
     classpath = ':'.join([
         lib_dir,
         os.path.join(lib_dir, 'stanford-parser/stanford-parser.jar'),
         os.path.join(lib_dir, 'stanford-parser/stanford-parser-3.5.1-models.jar')])
     for filepath in sent_paths:
-        dependency_parse(filepath,cp=classpath, tokenize=False,sent_type='sent')
+        dependency_parse(filepath,cp=classpath, tokenize=True,sent_type='sents')
     for filepath in query_paths:
-        dependency_parse(filepath,cp=classpath, tokenize=False,sent_type='query')
+        dependency_parse(filepath,cp=classpath, tokenize=True,sent_type='queries')
     for filepath in choice_paths:
-        dependency_parse(filepath,cp=classpath, tokenize=False,sent_type='choice')
+        dependency_parse(filepath,cp=classpath, tokenize=True,sent_type='choices')
 
     #generate whole vocabulary
     for data_type in data_types:

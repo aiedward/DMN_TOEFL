@@ -1,4 +1,4 @@
-local DMN, parent = torch.class('HierAttnModel.DMN','nn.Module')
+local DMN, parent = torch.class('HierEpiModel.DMN','nn.Module')
 
 function DMN:__init(config)
   parent.__init(self)
@@ -111,7 +111,7 @@ function DMN:new_Mem_DNN()
     return Mem_DNN
 end
 
-  function DMN:forward(facts,query,predict,test)
+  function DMN:forward(facts,query)
     -- facts is a Matrix tensor, query is a table
     local T = facts:size(1) -- time steps
     -- sum the tensor inside the query table 
@@ -148,6 +148,7 @@ end
         self.Soft_Attns[i] = Soft_Attn
       end
       local Attn_Vector = Soft_Attn:forward(g)
+      
       --Start run GRU to generate episode
       self.depth = 0
       local episode
@@ -175,6 +176,7 @@ end
       end
       local Mem_DNN = self.Mem_DNNs[i]  --new Mem_DNN module 
       self.output = Mem_DNN:forward({m_p,episode,query})
+
     end
     return self.output
   end

@@ -4,13 +4,13 @@ Functions for loading data from disk.
 
 --]]
 
-function HierAttnModel.read_embedding(vocab_path, emb_path)
-  local vocab = HierAttnModel.Vocab(vocab_path)
+function HierEpiModel.read_embedding(vocab_path, emb_path)
+  local vocab = HierEpiModel.Vocab(vocab_path)
   local embedding = torch.load(emb_path)
   return vocab, embedding
 end
 
-function HierAttnModel.read_queries(path,vocab,id_path, cuda)
+function HierEpiModel.read_queries(path,vocab,id_path, cuda)
   local queries_all = {}
   local file = io.open(path,'r')
   local line
@@ -55,7 +55,7 @@ function HierAttnModel.read_queries(path,vocab,id_path, cuda)
   return queries
 end
 
-function HierAttnModel.read_sentences(path, vocab,verbose, cuda)
+function HierEpiModel.read_sentences(path, vocab,verbose, cuda)
   verbose = false
   local sentences = {}
   local file = io.open(path, 'r')
@@ -87,7 +87,7 @@ function HierAttnModel.read_sentences(path, vocab,verbose, cuda)
   return sentences
 end
 
-function HierAttnModel.read_trees(parent_path)
+function HierEpiModel.read_trees(parent_path)
   local parent_file = io.open(parent_path, 'r')
   local label_file
   local count = 0
@@ -102,14 +102,14 @@ function HierAttnModel.read_trees(parent_path)
     end
 
     count = count + 1
-    trees[count] = HierAttnModel.read_tree(parents, nil)
+    trees[count] = HierEpiModel.read_tree(parents, nil)
     trees[count].idx = count
   end
   parent_file:close()
   return trees
 end
 
-function HierAttnModel.read_tree(parents, labels)
+function HierEpiModel.read_tree(parents, labels)
   local size = #parents
   local nodes = {}
   if labels == nil then labels = {} end
@@ -124,7 +124,7 @@ function HierAttnModel.read_tree(parents, labels)
           break
         end
 
-        local node = HierAttnModel.TreeNode()
+        local node = HierEpiModel.TreeNode()
         if prev ~= nil then
           node:add_child(prev)
         end
@@ -155,7 +155,7 @@ function HierAttnModel.read_tree(parents, labels)
       leaf_idx = leaf_idx + 1
     end
   end
-  local tree = HierAttnModel.Tree(root, nodes)
+  local tree = HierEpiModel.Tree(root, nodes)
   return tree
 end
 
@@ -165,21 +165,30 @@ end
 QA
 
 --]]
-function HierAttnModel.read_toefl_dataset(dir,vocab,num_choices,prune_rate, cuda)
+function HierEpiModel.read_toefl_dataset(dir,vocab,num_choices,prune_rate, cuda)
   local dataset = {}
   dataset.vocab = vocab
 
   --get to know how many sentences in one story
-  dataset.num_sent = HierAttnModel.read_num_sent_table(dir .. 'num_sent',prune_rate)
+  dataset.num_sent = HierEpiModel.read_num_sent_table(dir .. 'num_sent',prune_rate)
   dataset.size = #dataset.num_sent
 
   local sent_tree_ls
   local choice_tree_ls
   local query_tree_ls
-
-  sent_tree_ls = HierAttnModel.read_trees(string.format(dir .. 'sents_%.1f_dparents', prune_rate))
-  query_tree_ls = HierAttnModel.read_trees(dir .. 'query_sep_dparents')
-  choice_tree_ls = HierAttnModel.read_trees(dir .. 'choice_dparents')
+  
+  local dpa_dir
+  local sents_dir
+  if prune_rate == 1.0 then
+    dpa_dir = string.format(dir .. 'sents_dparents')
+    sents_dir = string.format(dir .. 'sents.toks')
+  else
+    dpa_dir = string.format(dir .. 'sents_%.1f_dparents',prune_rate)
+    sents_dir = string.format(dir .. 'sents_%.1f',prune_rate)
+  end
+  sent_tree_ls = HierEpiModel.read_trees(dpa_dir)
+  query_tree_ls = HierEpiModel.read_trees(dir .. 'queries_sep_dparents')
+  choice_tree_ls = HierEpiModel.read_trees(dir .. 'choices_dparents')
 
   --set tree
   for _, tree in ipairs(sent_tree_ls) do
@@ -193,16 +202,15 @@ function HierAttnModel.read_toefl_dataset(dir,vocab,num_choices,prune_rate, cuda
   end
 
   --set each sentence
-  print(string.format(dir .. 'sents_%.1f',prune_rate))
-  local sent_ls = HierAttnModel.read_sentences(string.format(dir .. 'sents_%.1f',prune_rate) , vocab, true, cuda)
-  local query_ls = HierAttnModel.read_queries(dir .. 'queries_sep', vocab,dir ..'query_id.map', cuda)
-  local choice_ls = HierAttnModel.read_sentences(dir .. 'choices' , vocab, cuda)
+  local sent_ls = HierEpiModel.read_sentences(sents_dir , vocab, true, cuda)
+  local query_ls = HierEpiModel.read_queries(dir .. 'queries_sep.toks', vocab,dir ..'queries_id.map', cuda)
+  local choice_ls = HierEpiModel.read_sentences(dir .. 'choices.toks' , vocab, cuda)
   dataset.queries = {}
   local q_g_idx = 1
   for q=1,#query_ls do
     local one_query = {}
     for qq=1,#query_ls[q] do
-      table.insert(one_query,HierAttnModel.Sentence(query_ls[q][qq],query_tree_ls[q_g_idx]))
+      table.insert(one_query,HierEpiModel.Sentence(query_ls[q][qq],query_tree_ls[q_g_idx]))
       q_g_idx = q_g_idx + 1
     end
     table.insert(dataset.queries,one_query)
@@ -213,7 +221,7 @@ function HierAttnModel.read_toefl_dataset(dir,vocab,num_choices,prune_rate, cuda
   for i=1,dataset.size do
     local one_story_choices = {}
     for c=1,num_choices do
-      table.insert(one_story_choices,HierAttnModel.Sentence(choice_ls[start_idx+c-1],choice_tree_ls[start_idx+c-1]))
+      table.insert(one_story_choices,HierEpiModel.Sentence(choice_ls[start_idx+c-1],choice_tree_ls[start_idx+c-1]))
     end
     table.insert(dataset.choices,one_story_choices)
     start_idx = start_idx + num_choices
@@ -225,15 +233,15 @@ function HierAttnModel.read_toefl_dataset(dir,vocab,num_choices,prune_rate, cuda
   for i=1,dataset.size do
     local one_story_sents = {}
     for c=1,dataset.num_sent[i] do
-      table.insert(one_story_sents,HierAttnModel.Sentence(sent_ls[start_idx+c-1],sent_tree_ls[start_idx+c-1]))
+      table.insert(one_story_sents,HierEpiModel.Sentence(sent_ls[start_idx+c-1],sent_tree_ls[start_idx+c-1]))
     end
     table.insert(dataset.sents,one_story_sents)
     start_idx = start_idx + dataset.num_sent[i]
   end
 
   --set golden and answer
-  dataset.golden = HierAttnModel.read_prob(dir .. 'labels', dataset.size,4, cuda)
-  dataset.answers = HierAttnModel.read_answers(dir .. 'answers', dataset.size)
+  dataset.golden = HierEpiModel.read_prob(dir .. 'labels', dataset.size,4, cuda)
+  dataset.answers = HierEpiModel.read_answers(dir .. 'answers', dataset.size)
   dataset.container = {}
   for i=1,dataset.size do
     dataset.container[i] = {}
@@ -253,7 +261,7 @@ function mysplit(inputstr,sep)
   return t
 end
 
-function HierAttnModel.read_prob(path,num_data,num_choices, cuda)
+function HierEpiModel.read_prob(path,num_data,num_choices, cuda)
   local probs = {}
   local file = io.open(path,'r')
   for s=1,num_data do
@@ -273,7 +281,7 @@ function HierAttnModel.read_prob(path,num_data,num_choices, cuda)
   return probs
 end
 
-function HierAttnModel.read_answers(path,num_data)
+function HierEpiModel.read_answers(path,num_data)
   local answers = {}
   local file = io.open(path,'r')
   for s=1,num_data do
@@ -307,7 +315,7 @@ function set_spans(node)
   end
 end
 
-function HierAttnModel.read_labels(path, num_data)
+function HierEpiModel.read_labels(path, num_data)
   local labels = {}
   local file = io.open(path,'r')
   local labels = torch.IntTensor(num_data)
@@ -319,7 +327,7 @@ function HierAttnModel.read_labels(path, num_data)
   return labels:double()
 end
 
-function HierAttnModel.read_num_sent_table(path, prune_rate)
+function HierEpiModel.read_num_sent_table(path, prune_rate)
   local num_sent_table = {}
   local file = io.open(path,'r')
   local line

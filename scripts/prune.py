@@ -32,14 +32,14 @@ toefl_ASR_dir = os.path.join(base_dir,'data','toefl','ASR_trans')
 dir_ls = list()
 for sub_dir in ['train','dev','test']:
     dir_ls.append(os.path.join(toefl_manual_dir,sub_dir))
-dir_ls.append(os.path.join(toefl_ASR_dir,'test'))
+# dir_ls.append(os.path.join(toefl_ASR_dir,'test'))
 
 frac = float(sys.argv[1])
 
 for file_dir in dir_ls:
     with open(os.path.join(file_dir,'num_sent'), 'r') as nsent_file, \
-         open(os.path.join(file_dir,'sent.toks'), 'r') as sent_file, \
-         open(os.path.join(file_dir,'query.toks'), 'r') as query_file, \
+         open(os.path.join(file_dir,'sents.toks'), 'r') as sent_file, \
+         open(os.path.join(file_dir,'queries.toks'), 'r') as query_file, \
          open(os.path.join(file_dir,'sents_%.1f'%(frac)), 'w') as pruned_file:
         sents = []
         n_sents = []

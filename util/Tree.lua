@@ -4,8 +4,8 @@
 
 --]]
 
-local Tree = torch.class('HierAttnModel.Tree')
-local Sentence = torch.class('HierAttnModel.Sentence')
+local Tree = torch.class('HierEpiModel.Tree')
+local Sentence = torch.class('HierEpiModel.Sentence')
 
 function Sentence:__init(sent,tree)
 	self.sent = sent
@@ -29,7 +29,7 @@ end
 
 --]]
 
-local TreeNode = torch.class('HierAttnModel.TreeNode')
+local TreeNode = torch.class('HierEpiModel.TreeNode')
 
 function TreeNode:__init()
     self.parent = nil
