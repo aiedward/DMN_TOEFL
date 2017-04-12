@@ -15,8 +15,10 @@ include('util/Vocab.lua')
 include('layers/CRowAddTable.lua')
 include('models/TreeLSTM.lua')
 include('models/ChildSumTreeLSTM.lua')
+include('models/MemN2N.lua')
 include('models/DMN.lua')
 include('toefl/HEModelToefl.lua')
+include('toefl/HierAttnModelToefl.lua')
 
 printf = utils.printf
 
